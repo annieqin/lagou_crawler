@@ -3,47 +3,11 @@
 __author__ = 'AnnieQin <annie__qin@163.com>'
 
 import requests
-from peewee import *
 import multiprocessing
 import os
 from datetime import datetime
 
-mysql_db = MySQLDatabase('lagou', host='127.0.0.1', port=3306, user='root')
-
-
-class BaseModel(Model):
-    class Meta:
-        database = mysql_db
-
-
-def create_tables():
-    mysql_db.connect()
-    mysql_db.create_tables([Job], safe=True)
-
-
-class Job(BaseModel):
-    position_id = CharField(max_length=50, default='')
-    city = CharField(max_length=100, default='')
-    company_name = CharField(max_length=100, default='')
-    company_short_name = CharField(max_length=1000, default='')
-    company_size = CharField(max_length=100, default='')
-
-    create_time = CharField(max_length=500, default='')
-
-    education = CharField(max_length=100, default='')
-
-    finance_stage = CharField(max_length=100, default='')
-
-    industry_field = CharField(max_length=100, default='')
-
-    position_name = CharField(max_length=100, default='')
-    position_first_type = CharField(max_length=100, default='')
-    position_type = CharField(max_length=100, default='')
-
-    job_nature = CharField(max_length=25, default='')
-
-    salary = CharField(max_length=100, default='')
-    work_year = CharField(max_length=100, default='')
+from model import Job, mysql_db
 
 
 def requests_post(url, params=None, payload=None):
@@ -135,9 +99,8 @@ rlock = manager.RLock()
 
 
 def main():
-    cities = ['北京', '上海', '广州', '深圳']
-    positions = ['python', 'java', 'php', 'c', 'c++',
-                 'ruby', '.net', 'c#', 'node.js', 'go']
+    cities = ['北京', '上海', '广州', '深圳', '杭州']
+    positions = ['python', 'java', 'php', 'c', 'c++']
 
     for p in positions:
         for c in cities:
