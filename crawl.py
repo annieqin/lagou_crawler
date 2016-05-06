@@ -4,6 +4,9 @@ __author__ = 'AnnieQin <annie__qin@163.com>'
 
 import requests
 from peewee import *
+import multiprocessing
+import os
+from datetime import datetime
 
 mysql_db = MySQLDatabase('lagou', host='127.0.0.1', port=3306, user='root')
 
@@ -44,68 +47,110 @@ class Job(BaseModel):
 
 
 def requests_post(url, params=None, payload=None):
+
     res = requests.post(url,
                         params=params,
                         data=payload)
     return res
 
 
-def main():
-    cities = ['北京', '上海', '广州', '深圳', '杭州']
-    positions = ['python', 'java', 'php', 'c', 'c++', 'ruby',
-                 '.net', 'c#', 'node.js', 'go']
-
+def crawling(task):
     payload = {
         'first': False,
-        'pn': 1,
-        'kd': ''
+        'kd': task[0],
+        'pn': task[2],
     }
     params = {
-        'city': ''
+        'city': task[1]
     }
 
+    print str(os.getpid())+' Crawling '+task[0]+' '+task[1]+' '+str(task[2])
+    response = requests_post(
+        'http://www.lagou.com/jobs/positionAjax.json',
+        params=params,
+        payload=payload)
+
+    result = response.json()['content']['result']
+
+    if result:
+        try:
+            with mysql_db.atomic():
+                for res in result:
+                    job = Job.select().where(Job.position_id == res['positionId']).exists()
+                    if not job:
+                        item = {}
+                        item['position_id'] = res['positionId']
+                        item['city'] = params['city']
+                        item['company_name'] = res['companyName']
+                        item['company_short_name'] = res['companyShortName']
+                        item['company_size'] = res['companySize']
+                        item['create_time'] = res['createTime']
+                        item['education'] = res['education']
+                        item['finance_stage'] = res['financeStage']
+                        item['industry_field'] = res['industryField']
+                        item['position_name'] = payload['kd']
+                        item['position_first_type'] = res['positionFirstType']
+                        item['position_type'] = res['positionType']
+                        item['job_nature'] = res['jobNature']
+                        item['salary'] = res['salary']
+                        item['work_year'] = res['workYear']
+
+                        Job.create(**item)
+        except:
+            print str(os.getpid())+' mysql insert exception'
+        for i in range(1, 5):
+
+            queue.put((task[0], task[1], task[2]+i))
+        return
+    else:
+        return
+
+
+def working(ns, queue, rlock):
+    while True:
+        if rlock.acquire():
+            if not queue.empty():
+                task = queue.get()
+                visited_pages = ns.visited_pages
+                if task in visited_pages:
+                    queue.task_done()
+                    rlock.release()
+                    continue
+                visited_pages.add(task)
+                ns.visited_pages = visited_pages
+                rlock.release()
+
+                crawling(task)
+                continue
+            else:
+                rlock.release()
+                break
+
+
+manager = multiprocessing.Manager()
+ns = manager.Namespace()
+ns.visited_pages = set()
+queue = manager.Queue()
+rlock = manager.RLock()
+
+
+def main():
+    cities = ['北京', '上海', '广州', '深圳']
+    positions = ['python', 'java', 'php', 'c', 'c++',
+                 'ruby', '.net', 'c#', 'node.js', 'go']
+
     for p in positions:
-        payload['kd'] = p
         for c in cities:
-            pn = 1
-            flag = True
-            params['city'] = c
-            while flag:
-                payload['pn'] = pn
-                print 'Crawling '+p+' '+c+' '+str(pn)
-                response = requests_post('http://www.lagou.com/jobs/positionAjax.json',
-                                         params=params,
-                                         payload=payload)
-                result = response.json()['content']['result']
-
-                if result:
-                    try:
-                        with mysql_db.atomic():
-                            for res in result:
-                                job = Job.select().where(Job.position_id == res['positionId']).exists()
-                                if not job:
-                                    item = {}
-                                    item['position_id'] = res['positionId']
-                                    item['city'] = params['city']
-                                    item['company_name'] = res['companyName']
-                                    item['company_short_name'] = res['companyShortName']
-                                    item['company_size'] = res['companySize']
-                                    item['create_time'] = res['createTime']
-                                    item['education'] = res['education']
-                                    item['finance_stage'] = res['financeStage']
-                                    item['industry_field'] = res['industryField']
-                                    item['position_name'] = payload['kd']
-                                    item['position_first_type'] = res['positionFirstType']
-                                    item['position_type'] = res['positionType']
-                                    item['job_nature'] = res['jobNature']
-                                    item['salary'] = res['salary']
-                                    item['work_year'] = res['workYear']
-
-                                    Job.create(**item)
-                    except:
-                        print 'mysql insert exception'
-
-                    pn += 1
-
-                else:
-                    flag = False
+            queue.put((p, c, 1))
+    start_time = datetime.now()
+    processes = []
+    for i in range(4):
+        process = multiprocessing.Process(
+            target=working, args=(ns, queue, rlock)
+        )
+        process.start()
+        processes.append(process)
+    for process in processes:
+        process.join()
+    end_time = datetime.now()
+    print '多进程用时 '+str(end_time-start_time)
