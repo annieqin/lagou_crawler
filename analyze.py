@@ -28,7 +28,7 @@ def main():
     cities = ['北京', '上海', '广州', '深圳', '杭州']
     # cities = ['北京']
 
-    # positionnum_city(positions, cities)
+    positionnum_city(positions, cities)
 
     salary_city(positions, cities)
 
@@ -66,26 +66,11 @@ def salary_city(positions, cities):
             y.append(salaries[position][city])
         ys[position] = y
 
-    max_y = []
-    min_y = []
-    for y in ys:
-        plt.plot(x, ys[y], '.', linewidth=2, linestyle='-', label=y)
-        max_y.append(max(ys[y]))
-        min_y.append(min(ys[y]))
-    # plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    plt.legend(loc='center left')
-    plt.axis([0, len(cities)+1, min(min_y), max(max_y)])
-
     x_cities = ''
     for i in cities:
         x_cities += chinese_to_pinyin(i)+str('    ')
-    plt.xlabel(x_cities)
 
-    plt.ylabel('Salary (k)')
-
-    plt.title('Salary - City', fontsize=14, fontweight='bold')
-    plt.grid(True)
-    plt.show()
+    draw(x, ys, x_cities, 'Salary (k)', 'Salary - City')
 
 
 def positionnum_city(positions, cities):
@@ -100,26 +85,34 @@ def positionnum_city(positions, cities):
 
     x = [i+1 for i in range(len(cities))]
 
-    max_y = []
-    for y in ys:
-        plt.plot(x, ys[y], '.', linewidth=2, linestyle='-', label=y)
-        max_y.append(max(ys[y]))
-    plt.legend(loc='upper right')
-
-    plt.axis([0, len(cities)+1, 0, max(max_y)+500])
-    # plt.xticks((1,2,3,4,5))
-
     x_cities = ''
     for i in cities:
         x_cities += chinese_to_pinyin(i)+str('                    ')
-    plt.xlabel(x_cities)
-    # plt.xlabel('BeiJing    ShangHai    GuangZhou    ShenZhen    HangZhou')
 
-    plt.ylabel('Position Num')
+    draw(x, ys, x_cities,  'Position Num', 'Position Num - City')
 
-    plt.title('Position Num - City', fontsize=14, fontweight='bold')
+
+def draw(x, ys, xlabel, ylabel, title):
+    max_y = []
+    min_y = []
+    for y in ys:
+        plt.plot(x, ys[y], '.', linewidth=2, linestyle='-', label=y)
+        max_y.append(max(ys[y]))
+        min_y.append(min(ys[y]))
+
+    # plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.legend(loc='best')
+    plt.axis([0, len(x)+1, min(min_y), max(max_y)])
+
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+
+    plt.title(title, fontsize=14, fontweight='bold')
+
     plt.grid(True)
     plt.show()
+
+
 
 
 
