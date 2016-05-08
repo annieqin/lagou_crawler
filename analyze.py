@@ -30,9 +30,9 @@ def main():
     # cities = ['北京']
 
     positionnum_city(positions, cities)
-    salary_city(positions, cities)
-    companysize_city(positions, cities)
-    salary_workyear(positions)
+    # salary_city(positions, cities)
+    # companysize_city(positions, cities)
+    # salary_workyear(positions)
 
 
 def salary_workyear(positions):
@@ -164,7 +164,9 @@ def positionnum_city(positions, cities):
 
     xticks = ('BeiJing', 'ShangHai', 'GuangZhou', 'ShenZhen', 'HangZhou')
 
-    draw(x, ys, 500, 500, xticks, 'City',  'Position Num', 'City - Position Num')
+    # draw(x, ys, 500, 500, xticks, 'City',
+    #      'Position Num', 'City - Position Num')
+    draw_bar(x, ys, xticks, 'City',  'Position Num', 'City - Position Num')
 
 
 def draw(x, ys, ybottom, ytop, xticks, xlabel, ylabel, title):
@@ -180,8 +182,8 @@ def draw(x, ys, ybottom, ytop, xticks, xlabel, ylabel, title):
     plt.axis([0, len(x)+1, min(min_y)-ybottom, max(max_y)+ytop])
 
     index = np.arange(len(x))
-    bar_width = 1
-    plt.xticks(index+bar_width, xticks)
+    offset = 1
+    plt.xticks(index+offset, xticks)
 
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
@@ -189,4 +191,22 @@ def draw(x, ys, ybottom, ytop, xticks, xlabel, ylabel, title):
     plt.title(title, fontsize=14, fontweight='bold')
 
     plt.grid(True)
+    plt.show()
+
+
+def draw_bar(x, ys, xticks, xlabel, ylabel, title):
+    index = np.arange(len(x))
+    # index = [i+1 for i in range(len(x))]
+    bar_width = 0.18
+    offset = 0
+    opacity = 0.4
+    for y in ys:
+        plt.bar(index+offset, ys[y], bar_width,
+                label=y, color=np.random.rand(3, 1), alpha=opacity,)
+        offset += 0.18
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.xticks(index+(offset/2), xticks)
+    plt.legend()
     plt.show()
