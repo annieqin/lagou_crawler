@@ -29,15 +29,15 @@ def main():
     cities = ['北京', '上海', '广州', '深圳', '杭州']
     # cities = ['北京']
 
-    # positionnum_city(positions, cities)
-    # salary_city(positions, cities)
-    # companysize_city(positions, cities)
+    positionnum_city(positions, cities)
+    salary_city(positions, cities)
+    companysize_city(positions, cities)
     salary_workyear(positions)
 
 
 def salary_workyear(positions):
     salaries = {}
-    work_year = set()
+    # work_year = set()
     for position in positions:
         salaries_position = defaultdict(list)
         p = positions[position].select(Job.work_year,
@@ -53,12 +53,12 @@ def salary_workyear(positions):
             re_workyear = re.search(r'\d{1,2}-\d{1,2}|\d{1,2}', i.work_year)
             if re_workyear:
                 salaries_position[re_workyear.group()].append(re_salary)
-                work_year.add(re_workyear.group())
+                # work_year.add(re_workyear.group())
             else:
                 salaries_position[i.work_year].append(re_salary)
-                work_year.add(i.work_year)
+                # work_year.add(i.work_year)
         salaries[position] = salaries_position
-    work_year = [u'\u4e0d\u9650', u'\u5e94\u5c4a\u6bd5\u4e1a\u751f', '1', '1-3', '3-5', '5-10', '10']
+    work_year = [u'\u4e0d\u9650', u'\u5e94\u5c4a\u6bd5\u4e1a\u751f', '1', '1-3', '3-5', '5-10']
 
     for p in salaries:
         for wy in salaries[p]:
@@ -76,8 +76,9 @@ def salary_workyear(positions):
                 y.append(0)
         ys[p] = y
 
-    draw(x, ys, 'NoLimit Graduates <1       1-3      3-5      5-10      >10',
-         'Salary (k)', 'Salary - Work Year')
+    xticks = ('NoLimit', 'Graduates', '<1', '1-3', '3-5', '5-10')
+
+    draw(x, ys, 2, 2, xticks, 'Work Year', 'Salary (k)', 'Work Year - Salary')
 
 
 def companysize_city(positions, cities):
@@ -106,11 +107,9 @@ def companysize_city(positions, cities):
             y.append(companysize[position][city])
         ys[position] = y
 
-    x_cities = ''
-    for i in cities:
-        x_cities += chinese_to_pinyin(i)+str('    ')
+    xticks = ('BeiJing', 'ShangHai', 'GuangZhou', 'ShenZhen', 'HangZhou')
 
-    draw(x, ys, x_cities, 'Company Size', 'Company Size - City')
+    draw(x, ys, 100, 100, xticks, 'City', 'Company Size', 'City - Company Size')
 
 
 def salary_city(positions, cities):
@@ -146,11 +145,9 @@ def salary_city(positions, cities):
             y.append(salaries[position][city])
         ys[position] = y
 
-    x_cities = ''
-    for i in cities:
-        x_cities += chinese_to_pinyin(i)+str('    ')
+    xticks = ('BeiJing', 'ShangHai', 'GuangZhou', 'ShenZhen', 'HangZhou')
 
-    draw(x, ys, x_cities, 'Salary (k)', 'Salary - City')
+    draw(x, ys, 1, 1, xticks, 'City', 'Salary (k)', 'City - Salary')
 
 
 def positionnum_city(positions, cities):
@@ -165,14 +162,12 @@ def positionnum_city(positions, cities):
 
     x = [i+1 for i in range(len(cities))]
 
-    x_cities = ''
-    for i in cities:
-        x_cities += chinese_to_pinyin(i)+str('                    ')
+    xticks = ('BeiJing', 'ShangHai', 'GuangZhou', 'ShenZhen', 'HangZhou')
 
-    draw(x, ys, x_cities,  'Position Num', 'Position Num - City')
+    draw(x, ys, 500, 500, xticks, 'City',  'Position Num', 'City - Position Num')
 
 
-def draw(x, ys, xlabel, ylabel, title):
+def draw(x, ys, ybottom, ytop, xticks, xlabel, ylabel, title):
     max_y = []
     min_y = []
     for y in ys:
@@ -182,7 +177,11 @@ def draw(x, ys, xlabel, ylabel, title):
 
     # plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.legend(loc='best')
-    plt.axis([0, len(x)+1, min(min_y), max(max_y)])
+    plt.axis([0, len(x)+1, min(min_y)-ybottom, max(max_y)+ytop])
+
+    index = np.arange(len(x))
+    bar_width = 1
+    plt.xticks(index+bar_width, xticks)
 
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
@@ -191,9 +190,3 @@ def draw(x, ys, xlabel, ylabel, title):
 
     plt.grid(True)
     plt.show()
-
-
-
-
-
-
