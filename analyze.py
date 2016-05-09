@@ -9,8 +9,6 @@ import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 
-from util import chinese_to_pinyin
-
 
 def main():
     python = Job.select().where(Job.position_name == 'python')
@@ -29,11 +27,47 @@ def main():
     cities = ['北京', '上海', '广州', '深圳', '杭州']
     # cities = ['北京']
 
-    positionnum_city(positions, cities)
+    # positionnum_city(positions, cities)
     # salary_city(positions, cities)
     # companysize_city(positions, cities)
     # salary_workyear(positions)
     # salary_education(positions)
+    positionnum_workyear(positions)
+    positionnum_education(positions)
+
+
+def positionnum_workyear(positions):
+    work_year = ['不限', '应届毕业生', '1年以下', '1-3年', '3-5年', '5-10年']
+    ys = {}
+    ys_pie = {}
+    for key, value in positions.items():
+        y = []
+        for wy in work_year:
+            num = value.where(Job.work_year == wy).count()
+            y.append(num)
+        ys[key] = y
+        ys_pie[key] = sum(y)
+    x = [i+1 for i in range(len(work_year))]
+
+    xticks = ('NoLimit', 'Graduates', '<1', '1-3', '3-5', '5-10')
+
+    draw_bar(x, ys, xticks, 'Work Year', 'Position Num', 'Work Year - Position Num')
+
+
+def positionnum_education(positions):
+    education = ['学历不限', '大专', '本科', '硕士']
+    ys = {}
+    for key, value in positions.items():
+        y = []
+        for edu in education:
+            num = value.where(Job.education == edu).count()
+            y.append(num)
+        ys[key] = y
+    x = [i+1 for i in range(len(education))]
+
+    xticks = ('NoLimit', 'JuniorCollege', 'Undergraduate', 'Master')
+
+    draw_bar(x, ys, xticks, 'Education', 'Position Num', 'Education - Position Num')
 
 
 def salary_education(positions):
@@ -74,7 +108,6 @@ def salary_education(positions):
     xticks = ('NoLimit', 'JuniorCollege', 'Undergraduate', 'Master')
 
     draw(x, ys, 1, 1, xticks, 'Education', 'Salary (k)', 'Education - Salary')
-    draw_bar(x, ys, xticks, 'Education', 'Salary (k)', 'Education - Salary')
 
 
 def salary_workyear(positions):
@@ -151,7 +184,7 @@ def companysize_city(positions, cities):
 
     xticks = ('BeiJing', 'ShangHai', 'GuangZhou', 'ShenZhen', 'HangZhou')
 
-    draw(x, ys, 100, 100, xticks, 'City', 'Company Size', 'City - Company Size')
+    # draw(x, ys, 100, 100, xticks, 'City', 'Company Size', 'City - Company Size')
     draw_bar(x, ys, xticks, 'City', 'Company Size', 'City - Company Size')
 
 
@@ -210,8 +243,8 @@ def positionnum_city(positions, cities):
 
     xticks = ('BeiJing', 'ShangHai', 'GuangZhou', 'ShenZhen', 'HangZhou')
 
-    draw(x, ys, 500, 500, xticks, 'City',
-         'Position Num', 'City - Position Num')
+    # draw(x, ys, 500, 500, xticks, 'City',
+    #      'Position Num', 'City - Position Num')
     draw_bar(x, ys, xticks, 'City',  'Position Num', 'City - Position Num')
     # draw_pie(ys_pie, 'Position Needs')
 
@@ -235,7 +268,8 @@ def draw(x, ys, ybottom, ytop, xticks, xlabel, ylabel, title):
     plt.xlabel(xlabel, fontsize=12, fontweight='bold')
     plt.ylabel(ylabel, fontsize=12, fontweight='bold')
 
-    plt.title(title, fontsize=14, fontweight='bold')
+    plt.suptitle(title, fontsize=14, fontweight='bold')
+    plt.title('By AnnieQin', fontsize=12, loc='right')
 
     plt.grid(True)
     plt.show()
@@ -243,31 +277,62 @@ def draw(x, ys, ybottom, ytop, xticks, xlabel, ylabel, title):
 
 def draw_bar(x, ys, xticks, xlabel, ylabel, title):
     index = np.arange(len(x))
-    # index = [i+1 for i in range(len(x))]
     bar_width = 0.18
     offset = 0
     opacity = 0.4
+    rects = []
+    max_y = []
     for y in ys:
-        plt.bar(index+offset, ys[y], bar_width,
-                label=y, color=np.random.rand(3, 1), alpha=opacity,)
-        offset += 0.18
+        rects.append(
+            plt.bar(index+offset, ys[y], bar_width,
+                    label=y, color=np.random.rand(3, 1), alpha=opacity,)
+            )
+        max_y.append(max(ys[y]))
+        offset += bar_width
+    # plt.axis([0, rects[len(rects)-1][len(rects[0])-1].get_x()+bar_width,
+    #           0, max(max_y)+1000])
+    plt.axis([0, len(x)-1+(bar_width*len(ys)),
+              0, max(max_y)*1.2])
     plt.xlabel(xlabel, fontsize=12, fontweight='bold')
     plt.ylabel(ylabel, fontsize=12, fontweight='bold')
-    plt.title(title, fontsize=14, fontweight='bold')
+
+    plt.suptitle(title, fontsize=14, fontweight='bold')
+    plt.title('By AnnieQin', fontsize=12, loc='right')
+
     plt.xticks(index+(offset/2), xticks)
+
     plt.legend(loc='best')
+
+    def autolabel(bars):
+        for bar in bars:
+            height = bar.get_height()
+            plt.text(bar.get_x() + bar.get_width()/2., 1.05*height,
+                     '%d' % int(height),
+                     ha='center', va='bottom'
+                     )
+    for rect in rects:
+        autolabel(rect)
+
     plt.show()
 
 
 def draw_pie(data, title):
+    # data = {'python': 1208,
+    #         'java': 6882,
+    #         'php': 6218,
+    #         'c': 2890,
+    #         'c++': 1982
+    # }
     size = []
     labels = []
     for k, i in data.items():
         labels.append(k)
         size.append(i)
     colors = [np.random.rand(3, 1) for _ in range(len(size))]
-    print size
+
     plt.pie(size, labels=labels, colors=colors, autopct='%1.1f%%')
 
-    plt.title(title, fontsize=14, fontweight='bold')
+    plt.suptitle(title, fontsize=14, fontweight='bold')
+    plt.title('By AnnieQin', fontsize=12, loc='right')
+
     plt.show()
